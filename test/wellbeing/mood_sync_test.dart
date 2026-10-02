@@ -35,7 +35,7 @@ void main() {
     await database.close();
   });
 
-  MoodLog _makeLog({String id = 'mood-001'}) {
+  MoodLog makeLog({String id = 'mood-001'}) {
     final now = DateTime.now();
     return MoodLog(
       id: id,
@@ -54,7 +54,7 @@ void main() {
 
   group('MoodRepository sync integration', () {
     test('saveCheckIn persists log and enqueues sync operation', () async {
-      final log = _makeLog();
+      final log = makeLog();
       await repo.saveCheckIn(log);
 
       // Verify saved
@@ -74,7 +74,7 @@ void main() {
     });
 
     test('deleteMoodLog soft-deletes and enqueues delete operation', () async {
-      final log = _makeLog();
+      final log = makeLog();
       await repo.saveCheckIn(log);
 
       // Clear queue from save
@@ -95,7 +95,7 @@ void main() {
     });
 
     test('applyRemoteMoodChange does not create a sync queue entry (loop prevention)', () async {
-      final log = _makeLog();
+      final log = makeLog();
       await repo.applyRemoteMoodChange(log.copyWithSynced());
 
       // Verify applied
@@ -109,7 +109,7 @@ void main() {
     });
 
     test('applyRemoteMoodDelete soft-deletes without re-queuing', () async {
-      final log = _makeLog();
+      final log = makeLog();
       await repo.applyRemoteMoodChange(log.copyWithSynced());
 
       await repo.applyRemoteMoodDelete(log.id, DateTime.now());
@@ -126,7 +126,7 @@ void main() {
 
     test('watchCheckInForDate returns log for correct logical day', () async {
       final today = DateTime.now();
-      final log = _makeLog();
+      final log = makeLog();
       await repo.saveCheckIn(log);
 
       final result = await repo.watchCheckInForDate(testUserId, today).first;
@@ -135,7 +135,7 @@ void main() {
     });
 
     test('watchMoodHistory returns recent logs', () async {
-      final log = _makeLog();
+      final log = makeLog();
       await repo.saveCheckIn(log);
 
       final history = await repo.watchMoodHistory(testUserId, 30).first;
@@ -144,7 +144,7 @@ void main() {
     });
 
     test('saveCheckIn transaction: log and queue are atomic', () async {
-      final log = _makeLog(id: 'atomic-mood-001');
+      final log = makeLog(id: 'atomic-mood-001');
       await repo.saveCheckIn(log);
 
       final logs = await database.select(database.moodLogsTable).get();

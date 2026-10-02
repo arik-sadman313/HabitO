@@ -75,8 +75,13 @@ def test_sync_push_pull(client):
     assert data["cursor"] > 0
 
 def test_sync_phase15(client):
+    client.post("/api/v1/auth/register", json={
+        "email": "test_phase15@example.com",
+        "password": "password123",
+        "display_name": "Phase 15 Test User"
+    })
     login_resp = client.post("/api/v1/auth/login", json={
-        "email": "test@example.com",
+        "email": "test_phase15@example.com",
         "password": "password123"
     })
     token = login_resp.json()["access_token"]

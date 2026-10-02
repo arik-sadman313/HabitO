@@ -35,7 +35,7 @@ void main() {
     await database.close();
   });
 
-  JournalEntry _makeEntry({
+  JournalEntry makeEntry({
     String id = 'entry-001',
     JournalType type = JournalType.personal,
     String body = 'Test body content',
@@ -60,7 +60,7 @@ void main() {
 
   group('JournalRepository sync integration', () {
     test('saveEntry persists entry and enqueues sync operation', () async {
-      final entry = _makeEntry();
+      final entry = makeEntry();
       await repo.saveEntry(entry);
 
       // Verify entry saved
@@ -80,7 +80,7 @@ void main() {
     });
 
     test('deleteEntry soft-deletes and enqueues delete operation', () async {
-      final entry = _makeEntry();
+      final entry = makeEntry();
       await repo.saveEntry(entry);
 
       // Clear queue from save
@@ -101,7 +101,7 @@ void main() {
     });
 
     test('applyRemoteJournalChange does not create a sync queue entry (loop prevention)', () async {
-      final entry = _makeEntry();
+      final entry = makeEntry();
       await repo.applyRemoteJournalChange(entry.copyWithSynced());
 
       // Verify entry applied
@@ -115,7 +115,7 @@ void main() {
     });
 
     test('applyRemoteJournalDelete soft-deletes without re-queuing', () async {
-      final entry = _makeEntry();
+      final entry = makeEntry();
       // First apply the record as if synced from remote
       await repo.applyRemoteJournalChange(entry.copyWithSynced());
 
@@ -132,7 +132,7 @@ void main() {
     });
 
     test('search finds journal entries by body content', () async {
-      final entry = _makeEntry(body: 'unique-phrase-xyzzy-12345');
+      final entry = makeEntry(body: 'unique-phrase-xyzzy-12345');
       await repo.saveEntry(entry);
 
       final results = await repo.searchJournalEntries(testUserId, 'xyzzy').first;
@@ -141,7 +141,7 @@ void main() {
     });
 
     test('search returns empty when no match', () async {
-      final entry = _makeEntry(body: 'hello world');
+      final entry = makeEntry(body: 'hello world');
       await repo.saveEntry(entry);
 
       final results = await repo.searchJournalEntries(testUserId, 'nomatch-xyz').first;
@@ -150,7 +150,7 @@ void main() {
 
     test('saveEntry transaction: entry and queue are atomic', () async {
       // Saving should produce exactly one entry and one queue item
-      final entry = _makeEntry(id: 'atomic-001');
+      final entry = makeEntry(id: 'atomic-001');
       await repo.saveEntry(entry);
 
       final entries = await database.select(database.journalEntriesTable).get();
