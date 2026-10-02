@@ -10,6 +10,7 @@ import 'package:habito/features/study/data/study_repository.dart';
 import 'package:habito/features/lifestyle/data/lifestyle_repositories.dart';
 import 'package:habito/features/journal/data/journal_repository.dart';
 import 'package:habito/features/wellbeing/data/mood_repository.dart';
+import 'package:habito/features/goals/data/personal_goal_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
@@ -34,6 +35,7 @@ void main() {
     final exerciseRepo = ExerciseRepositoryImpl(database);
     final journalRepo = JournalRepositoryImpl(database);
     final moodRepo = MoodRepositoryImpl(database);
+    final goalRepo = PersonalGoalRepositoryImpl(database);
     syncEngine = SyncEngine(
       database,
       dioClient,
@@ -46,6 +48,7 @@ void main() {
       exerciseRepo,
       journalRepo,
       moodRepo,
+      goalRepo,
     );
   });
   

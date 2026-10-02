@@ -7,9 +7,9 @@ from app.core.database import get_db
 from app.api.v1.routes.auth import get_current_user
 from app.models.user import User
 from app.models.sync import SyncChange
-from app.models.entities import Tracker, TrackerLog, Habit, HabitLog, Activity, StudySubject, StudySession, Meal, MealItem, SleepRecord, ExerciseSession, MoodLog, JournalEntry
+from app.models.entities import Tracker, TrackerLog, Habit, HabitLog, Activity, StudySubject, StudySession, Meal, MealItem, SleepRecord, ExerciseSession, MoodLog, JournalEntry, PersonalGoal
 from app.schemas.sync import SyncPushRequest, SyncPullResponse, SyncOperation
-from app.schemas.entities import TrackerDto, TrackerLogDto, HabitDto, HabitLogDto, ActivityDto, StudySubjectDto, StudySessionDto, MealDto, MealItemDto, SleepRecordDto, ExerciseSessionDto, MoodLogDto, JournalEntryDto
+from app.schemas.entities import TrackerDto, TrackerLogDto, HabitDto, HabitLogDto, ActivityDto, StudySubjectDto, StudySessionDto, MealDto, MealItemDto, SleepRecordDto, ExerciseSessionDto, MoodLogDto, JournalEntryDto, PersonalGoalDto
 
 router = APIRouter()
 
@@ -27,6 +27,7 @@ ENTITY_MODELS = {
     "exercise_session": (ExerciseSession, ExerciseSessionDto),
     "mood_log": (MoodLog, MoodLogDto),
     "journal_entry": (JournalEntry, JournalEntryDto),
+    "personal_goal": (PersonalGoal, PersonalGoalDto),
 }
 
 @router.post("/push")
@@ -69,6 +70,8 @@ def push_changes(request: SyncPushRequest, current_user: User = Depends(get_curr
                     existing.is_deleted = True
                     existing.updated_at = datetime.utcnow()
                 db.flush()
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=422, detail=f"Malformed payload for {op.entity_type}: {str(e)}")
 

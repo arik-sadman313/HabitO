@@ -7,8 +7,6 @@ import 'package:habito/features/goals/domain/goal_progress_service.dart';
 import 'package:habito/features/study/presentation/providers.dart';
 import 'package:habito/features/lifestyle/presentation/providers.dart';
 import 'package:habito/features/screen_time/presentation/providers.dart';
-import 'package:habito/features/trackers/presentation/providers.dart';
-import 'package:habito/features/activities/presentation/providers.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) => AppDatabase());
 

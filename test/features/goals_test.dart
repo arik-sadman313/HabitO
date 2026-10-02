@@ -5,24 +5,18 @@ import 'package:habito/features/goals/domain/goal_progress_service.dart';
 import 'package:habito/features/study/data/study_repository.dart';
 import 'package:habito/features/lifestyle/data/lifestyle_repositories.dart';
 import 'package:habito/features/screen_time/data/screen_time_repository.dart';
-import 'package:habito/features/trackers/data/tracker_repository.dart';
-import 'package:habito/features/activities/data/activity_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockStudyRepository extends Mock implements StudyRepository {}
 class MockExerciseRepository extends Mock implements ExerciseRepository {}
 class MockSleepRepository extends Mock implements SleepRepository {}
 class MockScreenTimeRepository extends Mock implements ScreenTimeRepository {}
-class MockTrackersRepository extends Mock implements TrackerRepository {}
-class MockActivitiesRepository extends Mock implements ActivityRepository {}
 
 void main() {
   late MockStudyRepository studyRepo;
   late MockExerciseRepository exerciseRepo;
   late MockSleepRepository sleepRepo;
   late MockScreenTimeRepository screenTimeRepo;
-  late MockTrackersRepository trackersRepo;
-  late MockActivitiesRepository activitiesRepo;
   late GoalProgressService service;
 
   setUp(() {
@@ -30,8 +24,6 @@ void main() {
     exerciseRepo = MockExerciseRepository();
     sleepRepo = MockSleepRepository();
     screenTimeRepo = MockScreenTimeRepository();
-    trackersRepo = MockTrackersRepository();
-    activitiesRepo = MockActivitiesRepository();
 
     service = GoalProgressService(
       studyRepo,

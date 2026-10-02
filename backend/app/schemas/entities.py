@@ -188,3 +188,21 @@ class JournalEntryDto(BaseModel):
     created_at: datetime
     updated_at: datetime
     is_deleted: bool = False
+
+class PersonalGoalDto(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    user_id: UUID
+    title: str
+    description: Optional[str] = None
+    goal_type: str
+    target_value: float
+    current_value: Optional[float] = None
+    unit: Optional[str] = None
+    start_date: datetime
+    target_date: Optional[datetime] = None
+    status: int  # GoalStatus enum index
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool = False
+

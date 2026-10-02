@@ -2,8 +2,6 @@ import 'package:habito/core/models/domain_models.dart';
 import 'package:habito/features/study/data/study_repository.dart';
 import 'package:habito/features/lifestyle/data/lifestyle_repositories.dart';
 import 'package:habito/features/screen_time/data/screen_time_repository.dart';
-import 'package:habito/features/trackers/data/tracker_repository.dart';
-import 'package:habito/features/activities/data/activity_repository.dart';
 
 class GoalProgressService {
   final StudyRepository _studyRepo;

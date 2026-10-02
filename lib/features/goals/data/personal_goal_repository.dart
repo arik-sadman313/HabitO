@@ -1,8 +1,9 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:habito/core/database/app_database.dart' as db;
-import 'package:habito/core/models/domain_models.dart';
 import 'package:habito/core/database/enums.dart';
 import 'package:habito/core/models/domain_models.dart';
+import 'package:habito/core/sync/dtos.dart';
 import 'package:uuid/uuid.dart';
 
 abstract class PersonalGoalRepository {
@@ -13,10 +14,13 @@ abstract class PersonalGoalRepository {
   Future<void> createGoal(PersonalGoal goal);
   Future<void> updateGoal(PersonalGoal goal);
   Future<void> deleteGoal(String goalId);
+  Future<void> applyRemotePersonalGoalChange(PersonalGoal goal);
+  Future<void> applyRemotePersonalGoalDelete(String goalId, DateTime updatedAt);
 }
 
 class PersonalGoalRepositoryImpl implements PersonalGoalRepository {
   final db.AppDatabase _db;
+  final _uuid = const Uuid();
 
   PersonalGoalRepositoryImpl(this._db);
 
@@ -26,7 +30,7 @@ class PersonalGoalRepositoryImpl implements PersonalGoalRepository {
       userId: entry.userId,
       title: entry.title,
       description: entry.description,
-      goalType: GoalType.values.firstWhere((e) => e.name == entry.goalType),
+      goalType: GoalType.values.firstWhere((e) => e.name == entry.goalType, orElse: () => GoalType.custom),
       targetValue: entry.targetValue,
       currentValue: entry.currentValue,
       unit: entry.unit,
@@ -93,36 +97,123 @@ class PersonalGoalRepositoryImpl implements PersonalGoalRepository {
 
   @override
   Future<void> createGoal(PersonalGoal goal) async {
-    await _db.into(_db.personalGoalsTable).insert(_mapToCompanion(goal));
+    final goalWithPending = PersonalGoal(
+      id: goal.id,
+      userId: goal.userId,
+      title: goal.title,
+      description: goal.description,
+      goalType: goal.goalType,
+      targetValue: goal.targetValue,
+      currentValue: goal.currentValue,
+      unit: goal.unit,
+      startDate: goal.startDate,
+      targetDate: goal.targetDate,
+      status: goal.status,
+      createdAt: goal.createdAt,
+      updatedAt: DateTime.now(),
+      syncStatus: SyncStatus.pendingInsert,
+      isDeleted: goal.isDeleted,
+    );
+
+    await _db.transaction(() async {
+      await _db.into(_db.personalGoalsTable).insert(_mapToCompanion(goalWithPending));
+
+      final dto = PersonalGoalDto.fromDomain(goalWithPending);
+      await _db.into(_db.syncQueueTable).insert(
+        db.SyncQueueTableCompanion.insert(
+          id: _uuid.v4(),
+          entityType: 'personal_goal',
+          entityId: goalWithPending.id,
+          scopeType: 'user',
+          scopeId: goalWithPending.userId,
+          operation: 'upsert',
+          payload: Value(jsonEncode(dto.toJson())),
+          createdAt: Value(DateTime.now()),
+        ),
+      );
+    });
   }
 
   @override
   Future<void> updateGoal(PersonalGoal goal) async {
-    await _db.update(_db.personalGoalsTable).replace(_mapToCompanion(goal));
+    final goalWithPending = PersonalGoal(
+      id: goal.id,
+      userId: goal.userId,
+      title: goal.title,
+      description: goal.description,
+      goalType: goal.goalType,
+      targetValue: goal.targetValue,
+      currentValue: goal.currentValue,
+      unit: goal.unit,
+      startDate: goal.startDate,
+      targetDate: goal.targetDate,
+      status: goal.status,
+      createdAt: goal.createdAt,
+      updatedAt: DateTime.now(),
+      syncStatus: SyncStatus.pendingUpdate,
+      isDeleted: goal.isDeleted,
+    );
+
+    await _db.transaction(() async {
+      await _db.into(_db.personalGoalsTable).insertOnConflictUpdate(_mapToCompanion(goalWithPending));
+
+      final dto = PersonalGoalDto.fromDomain(goalWithPending);
+      await _db.into(_db.syncQueueTable).insert(
+        db.SyncQueueTableCompanion.insert(
+          id: _uuid.v4(),
+          entityType: 'personal_goal',
+          entityId: goalWithPending.id,
+          scopeType: 'user',
+          scopeId: goalWithPending.userId,
+          operation: 'upsert',
+          payload: Value(jsonEncode(dto.toJson())),
+          createdAt: Value(DateTime.now()),
+        ),
+      );
+    });
   }
 
   @override
   Future<void> deleteGoal(String goalId) async {
-    // Soft delete
     final current = await getGoal(goalId);
-    if (current != null) {
-      await updateGoal(PersonalGoal(
-        id: current.id,
-        userId: current.userId,
-        title: current.title,
-        description: current.description,
-        goalType: current.goalType,
-        targetValue: current.targetValue,
-        currentValue: current.currentValue,
-        unit: current.unit,
-        startDate: current.startDate,
-        targetDate: current.targetDate,
-        status: current.status,
-        createdAt: current.createdAt,
-        updatedAt: DateTime.now(),
-        syncStatus: SyncStatus.pendingUpdate,
-        isDeleted: true,
-      ));
-    }
+    if (current == null) return;
+
+    await _db.transaction(() async {
+      await (_db.update(_db.personalGoalsTable)..where((t) => t.id.equals(goalId))).write(
+        db.PersonalGoalsTableCompanion(
+          isDeleted: const Value(true),
+          updatedAt: Value(DateTime.now()),
+          syncStatus: const Value(SyncStatus.pendingUpdate),
+        ),
+      );
+
+      await _db.into(_db.syncQueueTable).insert(
+        db.SyncQueueTableCompanion.insert(
+          id: _uuid.v4(),
+          entityType: 'personal_goal',
+          entityId: goalId,
+          scopeType: 'user',
+          scopeId: current.userId,
+          operation: 'delete',
+          createdAt: Value(DateTime.now()),
+        ),
+      );
+    });
+  }
+
+  @override
+  Future<void> applyRemotePersonalGoalChange(PersonalGoal goal) async {
+    await _db.into(_db.personalGoalsTable).insertOnConflictUpdate(_mapToCompanion(goal));
+  }
+
+  @override
+  Future<void> applyRemotePersonalGoalDelete(String goalId, DateTime updatedAt) async {
+    await (_db.update(_db.personalGoalsTable)..where((t) => t.id.equals(goalId))).write(
+      db.PersonalGoalsTableCompanion(
+        isDeleted: const Value(true),
+        updatedAt: Value(updatedAt),
+        syncStatus: const Value(SyncStatus.synced),
+      ),
+    );
   }
 }

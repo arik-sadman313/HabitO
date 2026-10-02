@@ -198,3 +198,22 @@ class JournalEntry(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     is_deleted = Column(Boolean, default=False)
+
+class PersonalGoal(Base):
+    __tablename__ = "personal_goals"
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    user_id = Column(UUID(as_uuid=True), index=True, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    goal_type = Column(String, nullable=False)
+    target_value = Column(Float, nullable=False)
+    current_value = Column(Float, nullable=True)
+    unit = Column(String, nullable=True)
+    start_date = Column(DateTime, nullable=False)
+    target_date = Column(DateTime, nullable=True)
+    status = Column(Integer, nullable=False)  # 0=active, 1=completed, 2=archived (GoalStatus enum index)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+

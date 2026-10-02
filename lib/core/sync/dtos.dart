@@ -1199,3 +1199,115 @@ class JournalEntryDto {
     );
   }
 }
+
+class PersonalGoalDto {
+  final String id;
+  final String userId;
+  final String title;
+  final String? description;
+  final String goalType;
+  final double targetValue;
+  final double? currentValue;
+  final String? unit;
+  final DateTime startDate;
+  final DateTime? targetDate;
+  final int status;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDeleted;
+
+  PersonalGoalDto({
+    required this.id,
+    required this.userId,
+    required this.title,
+    this.description,
+    required this.goalType,
+    required this.targetValue,
+    this.currentValue,
+    this.unit,
+    required this.startDate,
+    this.targetDate,
+    required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+  });
+
+  factory PersonalGoalDto.fromDomain(PersonalGoal domain) {
+    return PersonalGoalDto(
+      id: domain.id,
+      userId: domain.userId,
+      title: domain.title,
+      description: domain.description,
+      goalType: domain.goalType.name,
+      targetValue: domain.targetValue,
+      currentValue: domain.currentValue,
+      unit: domain.unit,
+      startDate: domain.startDate,
+      targetDate: domain.targetDate,
+      status: domain.status.index,
+      createdAt: domain.createdAt,
+      updatedAt: domain.updatedAt,
+      isDeleted: domain.isDeleted,
+    );
+  }
+
+  PersonalGoal toDomain(SyncStatus syncStatus) {
+    return PersonalGoal(
+      id: id,
+      userId: userId,
+      title: title,
+      description: description,
+      goalType: GoalType.values.firstWhere((e) => e.name == goalType, orElse: () => GoalType.custom),
+      targetValue: targetValue,
+      currentValue: currentValue,
+      unit: unit,
+      startDate: startDate,
+      targetDate: targetDate,
+      status: GoalStatus.values[status],
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      syncStatus: syncStatus,
+      isDeleted: isDeleted,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'title': title,
+      'description': description,
+      'goal_type': goalType,
+      'target_value': targetValue,
+      'current_value': currentValue,
+      'unit': unit,
+      'start_date': startDate.toIso8601String(),
+      'target_date': targetDate?.toIso8601String(),
+      'status': status,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'is_deleted': isDeleted,
+    };
+  }
+
+  factory PersonalGoalDto.fromJson(Map<String, dynamic> json) {
+    return PersonalGoalDto(
+      id: json['id'],
+      userId: json['user_id'],
+      title: json['title'],
+      description: json['description'],
+      goalType: json['goal_type'],
+      targetValue: (json['target_value'] as num).toDouble(),
+      currentValue: json['current_value'] != null ? (json['current_value'] as num).toDouble() : null,
+      unit: json['unit'],
+      startDate: DateTime.parse(json['start_date']),
+      targetDate: json['target_date'] != null ? DateTime.parse(json['target_date']) : null,
+      status: (json['status'] as num).toInt(),
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      isDeleted: json['is_deleted'] ?? false,
+    );
+  }
+}
+

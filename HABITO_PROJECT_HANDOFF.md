@@ -2,9 +2,9 @@
 
 **Document purpose:** Permanent handoff document for continuing HabitO across ChatGPT/Gemini/Antigravity accounts.
 
-**Current project state:** Phases 1–16 completed and verified. Phase 16 (Journal & Wellbeing Sync) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, JWT security, and automated unit test suites.
+**Current project state:** Phases 1–17 completed and verified. Phase 17 (Personal Goals Synchronization) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, JWT security, and automated unit test suites.
 
-**Critical rule:** Do not start Phase 17 automatically. Stop and wait for instructions after completing any phase.
+**Critical rule:** Do not start Phase 18 automatically. Stop and wait for instructions after completing any phase.
 
 ---
 
@@ -903,7 +903,7 @@ Therefore do not describe Phase 15 as synchronizing literally every application 
 | Water | Yes | Yes through Trackers | Yes | No |
 | Journal | Yes | Yes (`journal_entries`) | Synced (Phase 16) | Reserved |
 | Mood | Yes | Yes (`mood_logs`) | Synced (Phase 16) | Reserved |
-| Personal Goals | Yes | No/Not yet | No | No |
+| Personal Goals | Yes | Yes (`personal_goals`) | Synced (Phase 17) | No |
 | Screen Time | Yes | No/Not yet | No | No |
 | Reminders | Yes | No/Not yet | No | No |
 | Shared Goals | Yes | No/Not yet | No | Future |
@@ -1064,25 +1064,29 @@ Later, an explicit couple-scoped sync system can be designed for:
 
 ---
 
-# 14. Current Phase — Phase 16
+# 14. Current Phase — Phase 17
 
 ## Status
 
-**PHASE 16 IS COMPLETED AND VERIFIED.**
+**PHASE 17 IS COMPLETED AND VERIFIED.**
 
-Phase 16 (Journal & Wellbeing Synchronization) has been fully implemented and verified across Flutter repositories, SyncEngine, DTOs, FastAPI backend sync routes, SQLAlchemy models, Alembic migrations, security/ownership controls, and automated unit test suites.
+Phase 17 (Personal Goals Synchronization) has been fully implemented and verified across Flutter repositories, SyncEngine, DTOs, FastAPI backend sync routes, SQLAlchemy models, Alembic migrations, security/ownership controls, local GoalProgressService analytics, and automated unit test suites.
 
 ### Verified State Summary:
-1. **Database Migration**: `b92dd840c5d3_add_journal_and_mood_sync.py` creates `mood_logs` and `journal_entries` PostgreSQL tables and indexes.
-2. **Backend Models & DTOs**: `JournalEntry`, `MoodLog`, `JournalEntryDto`, and `MoodLogDto` implemented with Pydantic serialization.
-3. **Backend Sync Routing**: `push` and `pull` endpoints support `"journal_entry"` and `"mood_log"`.
-4. **Security & Ownership**: JWT authorization is enforced on all push/pull requests. User A cannot modify or pull User B's journal entries or mood logs.
-5. **Shared Journal Isolation**: Personal pull queries return only records owned by the authenticated user. Shared-type journal entries owned by User A are NOT delivered to User B via personal sync.
-6. **Flutter Synchronization**:
-   - `JournalRepositoryImpl` & `MoodRepositoryImpl`: Atomic local mutation + `SyncQueueTable` insertion on `save` / `delete`.
-   - `SyncEngine`: Dependency order set (order 1); `applyRemoteJournalChange`/`Delete` and `applyRemoteMoodChange`/`Delete` apply changes locally without re-queuing into `SyncQueueTable` (loop prevention).
+1. **Database Migration**: `c1f234567890_add_personal_goals_sync.py` creates `personal_goals` PostgreSQL table and index.
+2. **Backend Models & DTOs**: `PersonalGoal` SQLAlchemy model and `PersonalGoalDto` Pydantic schema implemented.
+3. **Backend Sync Routing**: Registered `"personal_goal": (PersonalGoal, PersonalGoalDto)` in `ENTITY_MODELS` routing.
+4. **Security & Ownership**: Derive owner from JWT. User A cannot push, pull, modify, or delete User B's personal goals. Payload `user_id` mismatch raises 403 Forbidden.
+5. **Flutter Synchronization**:
+   - `PersonalGoalRepositoryImpl`: Local mutations (`createGoal`, `updateGoal`, `deleteGoal`) execute inside atomic DB transaction with `SyncQueueTable` insertion.
+   - `SyncEngine`: Extended with `orderMap['personal_goal'] = 1` and remote apply calls.
+   - Remote apply methods (`applyRemotePersonalGoalChange`, `applyRemotePersonalGoalDelete`) update SQLite without re-enqueuing into `SyncQueueTable` (loop prevention).
+6. **Goal Progress Behavior**: Dynamic progress (`GoalProgress`) remains calculated locally on demand by `GoalProgressService` from source records. Derived progress values are NOT synchronized over the wire. `currentValue` is synchronized as source data for custom goals.
 7. **Test Verification**:
-   - Flutter tests: 41 / 41 passed.
+   - Flutter tests: 47 / 47 passed (including 6 Phase 17 goal sync tests in `test/features/personal_goals_sync_test.dart`).
+   - Backend tests: 16 / 16 passed (including 3 Phase 17 security/sync tests in `test_sync_phase17.py`).
+   - Flutter static analysis: Clean (0 errors).
+   - Release APK build: `build/app/outputs/flutter-apk/app-release.apk` built successfully.
    - Backend tests: 13 / 13 passed (including 6 Phase 16 security/sync tests in `test_sync_phase16.py`).
    - Flutter static analysis: 0 errors.
    - Release APK build: `build/app/outputs/flutter-apk/app-release.apk` built successfully.

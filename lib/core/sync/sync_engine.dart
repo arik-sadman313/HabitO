@@ -13,6 +13,7 @@ import '../../features/study/data/study_repository.dart';
 import '../../features/lifestyle/data/lifestyle_repositories.dart';
 import '../../features/journal/data/journal_repository.dart';
 import '../../features/wellbeing/data/mood_repository.dart';
+import '../../features/goals/data/personal_goal_repository.dart';
 import '../database/enums.dart';
 import 'dtos.dart';
 
@@ -31,6 +32,7 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
     ExerciseRepositoryImpl(ref.read(databaseProvider)),
     JournalRepositoryImpl(ref.read(databaseProvider)),
     MoodRepositoryImpl(ref.read(databaseProvider)),
+    PersonalGoalRepositoryImpl(ref.read(databaseProvider)),
   );
 });
 
@@ -46,6 +48,7 @@ class SyncEngine {
   final ExerciseRepository _exerciseRepo;
   final JournalRepository _journalRepo;
   final MoodRepository _moodRepo;
+  final PersonalGoalRepository _goalRepo;
 
   static const String _cursorKey = 'sync_cursor';
   static const String _deviceIdKey = 'device_id';
@@ -62,6 +65,7 @@ class SyncEngine {
     this._exerciseRepo,
     this._journalRepo,
     this._moodRepo,
+    this._goalRepo,
   );
 
   Future<String> _getDeviceId() async {
@@ -138,6 +142,7 @@ class SyncEngine {
         'exercise_session': 1,
         'mood_log': 1,
         'journal_entry': 1,
+        'personal_goal': 1,
         'tracker_log': 2,
         'habit_log': 2,
         'study_session': 2,
@@ -250,6 +255,14 @@ class SyncEngine {
                 } else {
                   final dto = JournalEntryDto.fromJson(safePayload);
                   await _journalRepo.applyRemoteJournalChange(dto.toDomain(SyncStatus.synced));
+                }
+                break;
+              case 'personal_goal':
+                if (operation == 'delete') {
+                  await _goalRepo.applyRemotePersonalGoalDelete(change['entity_id'], DateTime.parse(safePayload['updated_at']));
+                } else {
+                  final dto = PersonalGoalDto.fromJson(safePayload);
+                  await _goalRepo.applyRemotePersonalGoalChange(dto.toDomain(SyncStatus.synced));
                 }
                 break;
             }
