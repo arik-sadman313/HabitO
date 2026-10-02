@@ -5,11 +5,18 @@ import 'package:habito/core/database/app_database.dart' as db;
 import 'package:habito/core/database/enums.dart';
 import 'package:habito/core/models/domain_models.dart';
 import 'package:habito/core/sync/dtos.dart';
+import 'couple_api.dart';
 
 abstract class UsRepository {
   Future<Couple?> getCouple(String coupleId);
   Future<Couple?> getCurrentCouple(String userId);
   Future<User?> getPartner(String currentUserId, String coupleId);
+  
+  Future<Couple> createCouple();
+  Future<Map<String, dynamic>> generateInvite();
+  Future<Couple> joinCouple(String inviteCode);
+  Future<void> leaveCouple(String userId);
+  Future<void> refreshMyCouple(String userId);
   
   Stream<List<SharedGoal>> watchSharedGoals(String coupleId);
   Future<void> saveSharedGoal(SharedGoal goal);
@@ -38,9 +45,10 @@ abstract class UsRepository {
 
 class UsRepositoryImpl implements UsRepository {
   final db.AppDatabase _db;
+  final CoupleApi _coupleApi;
   final _uuid = const Uuid();
 
-  UsRepositoryImpl(this._db);
+  UsRepositoryImpl(this._db, this._coupleApi);
 
   @override
   Future<Couple?> getCurrentCouple(String userId) async {
@@ -89,6 +97,119 @@ class UsRepositoryImpl implements UsRepository {
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       syncStatus: record.syncStatus,
+    );
+  }
+
+  @override
+  Future<Couple> createCouple() async {
+    final response = await _coupleApi.createCouple();
+    return _syncRemoteCouple(response);
+  }
+
+  @override
+  Future<Map<String, dynamic>> generateInvite() async {
+    return await _coupleApi.generateInvite();
+  }
+
+  @override
+  Future<Couple> joinCouple(String inviteCode) async {
+    final response = await _coupleApi.joinCouple(inviteCode);
+    await refreshMyCouple(response['members'][0]['user_id']); // get members info as well
+    return getCouple(response['id']) as Future<Couple>;
+  }
+
+  @override
+  Future<void> leaveCouple(String userId) async {
+    await _coupleApi.leaveCouple();
+    // Do not delete shared data. Just mark couple status locally if needed, or remove membership.
+    // For local first, we remove the current couple pointer, but since couple is queried by userAId or userBId,
+    // we should update the couple status to separated.
+    final couple = await getCurrentCouple(userId);
+    if (couple != null) {
+      await _db.update(_db.couplesTable).replace(
+        db.CouplesTableCompanion(
+          id: Value(couple.id),
+          userAId: Value(couple.userAId),
+          userBId: Value(couple.userBId),
+          status: const Value(CoupleStatus.separated),
+          createdAt: Value(couple.createdAt),
+          updatedAt: Value(DateTime.now()),
+          syncStatus: const Value(SyncStatus.synced),
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<void> refreshMyCouple(String userId) async {
+    final response = await _coupleApi.getMyCouple();
+    if (response['couple'] != null) {
+      final coupleData = response['couple'];
+      final members = response['members'] as List;
+      
+      String userAId = userId;
+      String userBId = userId;
+      if (members.length == 2) {
+        userAId = members[0]['user_id'];
+        userBId = members[1]['user_id'];
+      } else if (members.length == 1) {
+        userAId = members[0]['user_id'];
+      }
+
+      final status = coupleData['status'] == 'active' ? CoupleStatus.active : CoupleStatus.separated;
+      final createdAt = DateTime.parse(coupleData['created_at']);
+      final updatedAt = DateTime.parse(coupleData['updated_at']);
+
+      await _db.into(_db.couplesTable).insertOnConflictUpdate(
+        db.CouplesTableCompanion(
+          id: Value(coupleData['id']),
+          userAId: Value(userAId),
+          userBId: Value(userBId),
+          status: Value(status),
+          createdAt: Value(createdAt),
+          updatedAt: Value(updatedAt),
+          syncStatus: const Value(SyncStatus.synced),
+        ),
+      );
+      
+      // Also upsert users if needed
+      for (var member in members) {
+        if (member['user_id'] != userId) {
+          // partner
+          await _db.into(_db.usersTable).insertOnConflictUpdate(
+            db.UsersTableCompanion(
+              id: Value(member['user_id']),
+              email: const Value('partner@example.com'), // placeholder
+              name: const Value('Partner'),
+              timezone: const Value('UTC'),
+              createdAt: Value(DateTime.parse(member['created_at'])),
+              updatedAt: Value(DateTime.parse(member['created_at'])),
+              syncStatus: const Value(SyncStatus.synced),
+            )
+          );
+        }
+      }
+    } else {
+      // Not in a couple, separate locally
+      await leaveCouple(userId);
+    }
+  }
+
+  Future<Couple> _syncRemoteCouple(Map<String, dynamic> coupleData) async {
+    // Basic sync
+    final status = coupleData['status'] == 'active' ? CoupleStatus.active : CoupleStatus.separated;
+    final createdAt = DateTime.parse(coupleData['created_at']);
+    final updatedAt = DateTime.parse(coupleData['updated_at']);
+    
+    // We don't have user_a / user_b from createCouple alone, so we should refresh
+    return Couple(
+      id: coupleData['id'],
+      userAId: '', 
+      userBId: '',
+      status: status,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      syncStatus: SyncStatus.synced,
     );
   }
 

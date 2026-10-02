@@ -7,13 +7,20 @@ import 'package:habito/core/models/domain_models.dart';
 import 'package:habito/features/us/data/us_repository.dart';
 
 
+import 'package:habito/features/us/data/couple_api.dart';
+
+class FakeCoupleApi implements CoupleApi {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
   late AppDatabase db;
   late UsRepositoryImpl usRepo;
 
   setUp(() async {
     db = AppDatabase.forTesting(DatabaseConnection(NativeDatabase.memory()));
-    usRepo = UsRepositoryImpl(db);
+    usRepo = UsRepositoryImpl(db, FakeCoupleApi());
 
     await db.into(db.usersTable).insert(UsersTableCompanion.insert(
       id: 'user-a',

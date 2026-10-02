@@ -3,9 +3,10 @@ import 'package:habito/core/database/app_database.dart' as db;
 import 'package:habito/features/auth/presentation/auth_notifier.dart';
 import 'package:habito/features/us/data/us_repository.dart';
 import 'package:habito/core/models/domain_models.dart';
+import 'package:habito/features/us/data/couple_api.dart';
 
 final usRepositoryProvider = Provider<UsRepository>((ref) {
-  return UsRepositoryImpl(db.AppDatabase());
+  return UsRepositoryImpl(db.AppDatabase(), ref.read(coupleApiProvider));
 });
 
 final currentCoupleProvider = FutureProvider<Couple?>((ref) async {

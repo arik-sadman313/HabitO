@@ -16,6 +16,7 @@ import '../../features/wellbeing/data/mood_repository.dart';
 import '../../features/goals/data/personal_goal_repository.dart';
 import '../../features/screen_time/data/screen_time_repository.dart';
 import '../../features/us/data/us_repository.dart';
+import '../../features/us/data/couple_api.dart';
 import '../database/enums.dart';
 import 'dtos.dart';
 
@@ -36,7 +37,7 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
     MoodRepositoryImpl(ref.read(databaseProvider)),
     PersonalGoalRepositoryImpl(ref.read(databaseProvider)),
     ScreenTimeRepositoryImpl(ref.read(databaseProvider)),
-    UsRepositoryImpl(ref.read(databaseProvider)),
+    UsRepositoryImpl(ref.read(databaseProvider), ref.read(coupleApiProvider)),
   );
 });
 
@@ -92,9 +93,19 @@ class SyncEngine {
     final pendingOps = await _db.select(_db.syncQueueTable).get();
     if (pendingOps.isEmpty) return;
 
+    // Filter couple operations if not in active couple
+    final coupleRecord = await (_db.select(_db.couplesTable)..limit(1)).getSingleOrNull();
+    final isCoupleActive = coupleRecord != null && coupleRecord.status == CoupleStatus.active;
+    final activeCoupleId = isCoupleActive ? coupleRecord.id : null;
+
     final deviceId = await _getDeviceId();
     
-    final operationsPayload = pendingOps.map((op) {
+    final operationsPayload = pendingOps.where((op) {
+      if (op.scopeType == 'couple') {
+        return isCoupleActive && op.scopeId == activeCoupleId;
+      }
+      return true;
+    }).map((op) {
       return {
         'entity_type': op.entityType,
         'entity_id': op.entityId,
@@ -106,6 +117,8 @@ class SyncEngine {
         'is_deleted': op.operation == 'delete',
       };
     }).toList();
+    
+    if (operationsPayload.isEmpty) return;
 
     try {
       final response = await _dioClient.dio.post('/sync/push', data: {

@@ -16,6 +16,12 @@ import 'package:habito/features/us/data/us_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
+import 'package:habito/features/us/data/couple_api.dart';
+
+class FakeCoupleApi implements CoupleApi {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +45,7 @@ void main() {
     final moodRepo = MoodRepositoryImpl(database);
     final goalRepo = PersonalGoalRepositoryImpl(database);
     final screenTimeRepo = ScreenTimeRepositoryImpl(database);
-    final usRepo = UsRepositoryImpl(database);
+    final usRepo = UsRepositoryImpl(database, FakeCoupleApi());
     syncEngine = SyncEngine(
       database,
       dioClient,

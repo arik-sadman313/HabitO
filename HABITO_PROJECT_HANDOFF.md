@@ -2,9 +2,9 @@
 
 **Document purpose:** Permanent handoff document for continuing HabitO across ChatGPT/Gemini/Antigravity accounts.
 
-**Current project state:** Phases 1–19 completed and verified. Phase 19 (Couple & Shared Data Synchronization) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, couple membership security controls, dual-scope SyncEngine, and automated unit test suites.
+**Current project state:** Phases 1–20 completed and verified. Phase 20 (Couple Lifecycle & Pairing Architecture) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, couple membership lifecycle, and automated unit test suites.
 
-**Critical rule:** Do not start Phase 20 automatically. Stop and wait for instructions after completing any phase.
+**Critical rule:** Do not start Phase 21 automatically. Stop and wait for instructions after completing any phase.
 
 ---
 
@@ -1064,32 +1064,32 @@ Later, an explicit couple-scoped sync system can be designed for:
 
 ---
 
-# 14. Current Phase — Phase 19
+# 14. Current Phase — Phase 20
 
 ## Status
 
-**PHASE 19 IS COMPLETED AND VERIFIED.**
+**PHASE 20 IS COMPLETED AND VERIFIED.**
 
-Phase 19 (Couple & Shared Data Synchronization) has been fully implemented and verified across Flutter repositories, SyncEngine, DTOs, FastAPI backend sync routes, SQLAlchemy models, Alembic migrations, couple membership security controls, dual-scope synchronization, and automated unit test suites.
+Phase 20 (Couple Lifecycle & Pairing Architecture) has been fully implemented and verified across Flutter repositories, FastAPI backend, SQLAlchemy models, Alembic migrations, couple membership lifecycle, and automated unit test suites.
 
 ### Verified State Summary:
-1. **Database Migration**: `e3f456789012_add_couple_shared_data_sync.py` creates `shared_goals`, `shared_habits`, `shared_activities`, and `memories` PostgreSQL tables with `couple_id` indexes and updated_at triggers.
-2. **Backend Models & DTOs**: `SharedGoal`, `SharedHabit`, `SharedActivity`, `Memory` SQLAlchemy models and corresponding DTO schemas implemented.
-3. **Backend Sync Routing**: Registered `shared_goal`, `shared_habit`, `shared_activity`, and `memory` in `ENTITY_MODELS` routing.
-4. **Security & Couple Membership**:
-   - `verify_couple_membership(user_id, couple_id, db)` validates that the authenticated JWT user belongs to the active couple.
-   - Non-members pushing or pulling couple-scoped entities receive HTTP 403 Forbidden.
-   - User A and User B in a verified couple can both push, pull, and synchronize shared entities.
-5. **Flutter Synchronization**:
-   - Extended `UsRepositoryImpl` with `saveSharedGoal`, `deleteSharedGoal`, `saveSharedHabit`, `deleteSharedHabit`, `saveSharedActivity`, `deleteSharedActivity`, `saveMemory`, `deleteMemory`.
-   - Operations atomically write to local Drift tables and insert entries into `SyncQueueTable` with `scopeType: 'couple'` and `scopeId: coupleId`.
-   - `SyncEngine` extended with `UsRepository` and couple pull/push support.
-   - Remote apply methods (`applyRemoteSharedGoalChange`, `applyRemoteSharedHabitChange`, `applyRemoteSharedActivityChange`, `applyRemoteMemoryChange`, etc.) update SQLite directly without re-enqueuing into `SyncQueueTable` (loop prevention).
+1. **Database Migration**: `cf3eb4481f16_add_couple_lifecycle_fields.py` adds `status`, `invite_code`, and `invite_expires_at` to the `couples` PostgreSQL table.
+2. **Backend Models & DTOs**: `Couple` SQLAlchemy model updated. `CoupleCreate`, `CoupleResponse`, `CoupleInviteResponse` schemas added.
+3. **Backend API Routing**: Registered `/api/v1/couples` routes for creating, inviting, joining, leaving, and fetching couple status.
+4. **Couple Lifecycle**:
+   - `createCouple()`: Initialize a couple as active (User A).
+   - `generateInvite()`: Create an invite code with 24-hour expiry.
+   - `joinCouple()`: Join using a code (User B) making both users active members.
+   - `leaveCouple()`: Disconnects current user from the couple without deleting shared data.
+5. **Flutter Client & UI**:
+   - Extended `UsRepositoryImpl` with `createCouple`, `generateInvite`, `joinCouple`, `leaveCouple`, `refreshMyCouple`.
+   - `UsNotifier` Riverpod state manages loading, error, and invite code states.
+   - `UsScreen` UI handles No Couple, Waiting for Partner, and Connected states dynamically.
+   - `SyncEngine` respects couple membership by filtering couple-scoped operations.
 6. **Test Verification**:
-   - Flutter tests: 58 / 58 passed (including 5 Phase 19 couple sync tests in `test/features/us_sync_test.dart`).
-   - Backend tests: 22 / 22 passed (including 3 Phase 19 security & sync tests in `backend/tests/test_sync_phase19.py`).
+   - Backend tests: Passed successfully (`tests/test_couples.py`).
+   - Flutter tests: Passed successfully (`test/features/couple_lifecycle_test.dart` and sync tests).
    - Flutter static analysis: Clean (0 errors).
-   - Release APK build: `build/app/outputs/flutter-apk/app-release.apk` built successfully.
 
 ---
 
