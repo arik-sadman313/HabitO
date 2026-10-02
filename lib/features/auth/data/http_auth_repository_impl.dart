@@ -35,7 +35,7 @@ class HttpAuthRepositoryImpl implements AuthRepository {
       id: userResponse.data['id'],
       name: userResponse.data['display_name'],
       email: userResponse.data['email'],
-      timezone: 'UTC',
+      timezone: userResponse.data['timezone'] ?? 'UTC',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       syncStatus: SyncStatus.synced,
@@ -55,7 +55,16 @@ class HttpAuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> logout() async {
-    await _sessionManager.clearSession();
+    try {
+      final refreshToken = await _sessionManager.getRefreshToken();
+      if (refreshToken != null) {
+        await _dio.post('/auth/logout', data: {'refresh_token': refreshToken});
+      }
+    } catch (e) {
+      // Ignore errors on logout (e.g. offline)
+    } finally {
+      await _sessionManager.clearSession();
+    }
   }
 
   @override
@@ -69,7 +78,7 @@ class HttpAuthRepositoryImpl implements AuthRepository {
         id: userResponse.data['id'],
         name: userResponse.data['display_name'],
         email: userResponse.data['email'],
-        timezone: 'UTC',
+        timezone: userResponse.data['timezone'] ?? 'UTC',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         syncStatus: SyncStatus.synced,
@@ -89,5 +98,37 @@ class HttpAuthRepositoryImpl implements AuthRepository {
   Future<Couple> joinInvitation(String code) async {
     // Unimplemented for Phase 13 Foundation
     throw UnimplementedError();
+  }
+
+  @override
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await _dio.post('/auth/password', data: {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+    });
+  }
+
+  @override
+  Future<User> updateProfile({String? name, String? timezone}) async {
+    final response = await _dio.patch('/auth/me', data: {
+      if (name != null) 'display_name': name,
+      if (timezone != null) 'timezone': timezone,
+    });
+    
+    return User(
+      id: response.data['id'],
+      name: response.data['display_name'],
+      email: response.data['email'],
+      timezone: response.data['timezone'] ?? 'UTC',
+      createdAt: DateTime.now(), // Simplified
+      updatedAt: DateTime.now(), // Simplified
+      syncStatus: SyncStatus.synced,
+    );
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    await _dio.delete('/auth/me');
+    await logout();
   }
 }

@@ -32,6 +32,7 @@ import 'package:habito/core/models/domain_models.dart';
 import 'package:habito/features/reminders/presentation/reminders_dashboard_screen.dart';
 import 'package:habito/features/reminders/presentation/create_reminder_screen.dart';
 import 'package:habito/features/settings/presentation/notification_settings_screen.dart';
+import 'package:habito/features/profile/presentation/profile_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorHomeKey = GlobalKey<NavigatorState>(debugLabel: 'shellHome');
@@ -61,6 +62,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
       GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
+      GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
 
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

@@ -12,6 +12,9 @@ abstract class AuthRepository {
   Future<User?> restoreSession();
   Future<Couple> createInvitation();
   Future<Couple> joinInvitation(String code);
+  Future<void> changePassword(String currentPassword, String newPassword);
+  Future<User> updateProfile({String? name, String? timezone});
+  Future<void> deleteAccount();
 }
 
 class MockAuthRepositoryImpl implements AuthRepository {
@@ -134,5 +137,36 @@ class MockAuthRepositoryImpl implements AuthRepository {
     );
     _mockInvitations.remove(code);
     return pairedCouple;
+  }
+
+  @override
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
+  @override
+  Future<User> updateProfile({String? name, String? timezone}) async {
+    await Future.delayed(const Duration(seconds: 1));
+    if (_currentUser == null) throw AuthException('Not authenticated');
+    final updated = User(
+      id: _currentUser!.id,
+      name: name ?? _currentUser!.name,
+      email: _currentUser!.email,
+      profileImageUrl: _currentUser!.profileImageUrl,
+      timezone: timezone ?? _currentUser!.timezone,
+      createdAt: _currentUser!.createdAt,
+      updatedAt: DateTime.now(),
+      syncStatus: _currentUser!.syncStatus,
+      isDeleted: _currentUser!.isDeleted,
+    );
+    _currentUser = updated;
+    await _userRepository.saveUser(updated);
+    return updated;
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    await Future.delayed(const Duration(seconds: 1));
+    await logout();
   }
 }

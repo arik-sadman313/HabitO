@@ -18,7 +18,7 @@ class DioClient {
       receiveTimeout: const Duration(seconds: 10),
     ));
 
-    _dio.interceptors.add(InterceptorsWrapper(
+    _dio.interceptors.add(QueuedInterceptorsWrapper(
       onRequest: (options, handler) async {
         final token = await _sessionManager.getAccessToken();
         if (token != null) {

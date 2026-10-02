@@ -32,12 +32,15 @@ class HomeScreen extends ConsumerWidget {
             // Header
             Row(
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  child: Text(
-                    user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'U',
-                    style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer, fontSize: 24),
+                GestureDetector(
+                  onTap: () => context.push('/profile'),
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    child: Text(
+                      user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'U',
+                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer, fontSize: 24),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),

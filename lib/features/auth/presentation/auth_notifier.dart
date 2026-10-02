@@ -75,4 +75,26 @@ class AuthNotifier extends Notifier<AuthState> {
     await repo.logout();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
+
+  Future<void> updateProfile({String? name, String? timezone}) async {
+    final repo = ref.read(authRepositoryProvider);
+    try {
+      final updatedUser = await repo.updateProfile(name: name, timezone: timezone);
+      state = state.copyWith(user: updatedUser);
+    } catch (e) {
+      // Typically should expose a way to show error via Snackbar, maybe throw
+      rethrow;
+    }
+  }
+
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    final repo = ref.read(authRepositoryProvider);
+    await repo.changePassword(currentPassword, newPassword);
+  }
+
+  Future<void> deleteAccount() async {
+    final repo = ref.read(authRepositoryProvider);
+    await repo.deleteAccount();
+    state = const AuthState(status: AuthStatus.unauthenticated);
+  }
 }

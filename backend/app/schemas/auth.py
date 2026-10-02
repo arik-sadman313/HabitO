@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     id: UUID
     email: str
     display_name: str
+    timezone: str
     created_at: datetime
     updated_at: datetime
     
@@ -29,3 +30,11 @@ class UserResponse(BaseModel):
 
 class TokenRefresh(BaseModel):
     refresh_token: str
+
+class ProfileUpdateRequest(BaseModel):
+    display_name: Optional[str] = None
+    timezone: Optional[str] = None
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str

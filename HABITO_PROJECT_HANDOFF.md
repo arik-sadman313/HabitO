@@ -2,9 +2,9 @@
 
 **Document purpose:** Permanent handoff document for continuing HabitO across ChatGPT/Gemini/Antigravity accounts.
 
-**Current project state:** Phases 1–20 completed and verified. Phase 20 (Couple Lifecycle & Pairing Architecture) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, couple membership lifecycle, and automated unit test suites.
+**Current project state:** Phases 1–21 completed and verified. Phase 21 (Advanced Authentication & Account Management) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, and automated unit test suites.
 
-**Critical rule:** Do not start Phase 21 automatically. Stop and wait for instructions after completing any phase.
+**Critical rule:** Do not start Phase 22 automatically. Stop and wait for instructions after completing any phase.
 
 ---
 
@@ -1064,32 +1064,44 @@ Later, an explicit couple-scoped sync system can be designed for:
 
 ---
 
-# 14. Current Phase — Phase 20
+# 14. Current Phase — Phase 21
 
 ## Status
 
-**PHASE 20 IS COMPLETED AND VERIFIED.**
+**PHASE 21 IS COMPLETED AND VERIFIED.**
 
-Phase 20 (Couple Lifecycle & Pairing Architecture) has been fully implemented and verified across Flutter repositories, FastAPI backend, SQLAlchemy models, Alembic migrations, couple membership lifecycle, and automated unit test suites.
+Phase 21 (Advanced Authentication & Account Management) has been fully implemented and verified across Flutter repositories, FastAPI backend, SQLAlchemy models, Alembic migrations, and automated unit test suites.
 
 ### Verified State Summary:
-1. **Database Migration**: `cf3eb4481f16_add_couple_lifecycle_fields.py` adds `status`, `invite_code`, and `invite_expires_at` to the `couples` PostgreSQL table.
-2. **Backend Models & DTOs**: `Couple` SQLAlchemy model updated. `CoupleCreate`, `CoupleResponse`, `CoupleInviteResponse` schemas added.
-3. **Backend API Routing**: Registered `/api/v1/couples` routes for creating, inviting, joining, leaving, and fetching couple status.
-4. **Couple Lifecycle**:
-   - `createCouple()`: Initialize a couple as active (User A).
-   - `generateInvite()`: Create an invite code with 24-hour expiry.
-   - `joinCouple()`: Join using a code (User B) making both users active members.
-   - `leaveCouple()`: Disconnects current user from the couple without deleting shared data.
-5. **Flutter Client & UI**:
-   - Extended `UsRepositoryImpl` with `createCouple`, `generateInvite`, `joinCouple`, `leaveCouple`, `refreshMyCouple`.
-   - `UsNotifier` Riverpod state manages loading, error, and invite code states.
-   - `UsScreen` UI handles No Couple, Waiting for Partner, and Connected states dynamically.
-   - `SyncEngine` respects couple membership by filtering couple-scoped operations.
+1. **Database Migration**: `8f79f9dc63b8_add_refresh_tokens_and_user_fields.py` adds `refresh_tokens` table, and `timezone`, `is_deleted` to the `users` table.
+2. **Backend Models & DTOs**: `RefreshToken` SQLAlchemy model added. `TokenResponse`, `PasswordChangeRequest`, `ProfileUpdateRequest` schemas updated.
+3. **Backend API Routing**: Updated `/api/v1/auth/login` to issue refresh tokens. Added `/api/v1/auth/refresh`, `/api/v1/auth/logout`, `/api/v1/auth/password`, `/api/v1/users/me` endpoints.
+4. **Flutter Network & Auth**:
+   - `SecureSessionManager` handles `refresh_token`.
+   - `AuthRepository` (and `HttpAuthRepositoryImpl`) supports `login`, `logout`, `changePassword`, `updateProfile`, `deleteAccount`.
+   - `DioClient` uses `QueuedInterceptorsWrapper` for robust 401 handling and automatic token refresh.
+5. **Flutter UI**:
+   - Created `ProfileScreen` with name and timezone editing.
+   - Implemented `Change Password` modal and `Delete Account` confirmation dialog.
+   - Integrated logout securely from the backend.
 6. **Test Verification**:
-   - Backend tests: Passed successfully (`tests/test_couples.py`).
-   - Flutter tests: Passed successfully (`test/features/couple_lifecycle_test.dart` and sync tests).
-   - Flutter static analysis: Clean (0 errors).
+   - Backend tests: Passed successfully (26 passed).
+   - Flutter tests: Passed successfully (59 passed).
+   - Flutter static analysis: Clean (16 infos, 1 warning, 0 errors).
+   - Release Build: APK Built successfully (67.4MB).
+7. **Manual Verification**: Not physically possible for this automated execution.
+   - Register/login: NOT MANUALLY TESTED
+   - Session restoration: NOT MANUALLY TESTED
+   - Profile update: NOT MANUALLY TESTED
+   - Timezone update: NOT MANUALLY TESTED
+   - Change password: NOT MANUALLY TESTED
+   - Logout: NOT MANUALLY TESTED
+   - Login again: NOT MANUALLY TESTED
+   - Token expiration/automatic refresh: NOT MANUALLY TESTED
+   - Delete account: NOT MANUALLY TESTED
+   - Attempt authentication after deletion: NOT MANUALLY TESTED
+8. **Known Limitations**:
+   - Timezone string relies on the client sending standard IANA strings, no backend validation to ensure valid mapping.
 
 ---
 
