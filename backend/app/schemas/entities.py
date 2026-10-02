@@ -206,3 +206,15 @@ class PersonalGoalDto(BaseModel):
     updated_at: datetime
     is_deleted: bool = False
 
+class ScreenTimeDailySnapshotDto(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    user_id: UUID
+    date: datetime
+    total_duration_seconds: int
+    app_count: int
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool = False
+
+

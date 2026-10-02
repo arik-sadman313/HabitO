@@ -2,9 +2,9 @@
 
 **Document purpose:** Permanent handoff document for continuing HabitO across ChatGPT/Gemini/Antigravity accounts.
 
-**Current project state:** Phases 1–17 completed and verified. Phase 17 (Personal Goals Synchronization) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, JWT security, and automated unit test suites.
+**Current project state:** Phases 1–18 completed and verified. Phase 18 (Screen Time Synchronization) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, JWT security, and automated unit test suites.
 
-**Critical rule:** Do not start Phase 18 automatically. Stop and wait for instructions after completing any phase.
+**Critical rule:** Do not start Phase 19 automatically. Stop and wait for instructions after completing any phase.
 
 ---
 
@@ -904,7 +904,7 @@ Therefore do not describe Phase 15 as synchronizing literally every application 
 | Journal | Yes | Yes (`journal_entries`) | Synced (Phase 16) | Reserved |
 | Mood | Yes | Yes (`mood_logs`) | Synced (Phase 16) | Reserved |
 | Personal Goals | Yes | Yes (`personal_goals`) | Synced (Phase 17) | No |
-| Screen Time | Yes | No/Not yet | No | No |
+| Screen Time | Yes | Yes (`screen_time_daily_snapshots`) | Synced (Phase 18) | No |
 | Reminders | Yes | No/Not yet | No | No |
 | Shared Goals | Yes | No/Not yet | No | Future |
 | Shared Habits | Yes | No/Not yet | No | Future |
@@ -1064,31 +1064,31 @@ Later, an explicit couple-scoped sync system can be designed for:
 
 ---
 
-# 14. Current Phase — Phase 17
+# 14. Current Phase — Phase 18
 
 ## Status
 
-**PHASE 17 IS COMPLETED AND VERIFIED.**
+**PHASE 18 IS COMPLETED AND VERIFIED.**
 
-Phase 17 (Personal Goals Synchronization) has been fully implemented and verified across Flutter repositories, SyncEngine, DTOs, FastAPI backend sync routes, SQLAlchemy models, Alembic migrations, security/ownership controls, local GoalProgressService analytics, and automated unit test suites.
+Phase 18 (Screen Time Synchronization) has been fully implemented and verified across Flutter repositories, SyncEngine, DTOs, FastAPI backend sync routes, SQLAlchemy models, Alembic migrations, security/ownership controls, stable daily snapshot identity, and automated unit test suites.
 
 ### Verified State Summary:
-1. **Database Migration**: `c1f234567890_add_personal_goals_sync.py` creates `personal_goals` PostgreSQL table and index.
-2. **Backend Models & DTOs**: `PersonalGoal` SQLAlchemy model and `PersonalGoalDto` Pydantic schema implemented.
-3. **Backend Sync Routing**: Registered `"personal_goal": (PersonalGoal, PersonalGoalDto)` in `ENTITY_MODELS` routing.
-4. **Security & Ownership**: Derive owner from JWT. User A cannot push, pull, modify, or delete User B's personal goals. Payload `user_id` mismatch raises 403 Forbidden.
-5. **Flutter Synchronization**:
-   - `PersonalGoalRepositoryImpl`: Local mutations (`createGoal`, `updateGoal`, `deleteGoal`) execute inside atomic DB transaction with `SyncQueueTable` insertion.
-   - `SyncEngine`: Extended with `orderMap['personal_goal'] = 1` and remote apply calls.
-   - Remote apply methods (`applyRemotePersonalGoalChange`, `applyRemotePersonalGoalDelete`) update SQLite without re-enqueuing into `SyncQueueTable` (loop prevention).
-6. **Goal Progress Behavior**: Dynamic progress (`GoalProgress`) remains calculated locally on demand by `GoalProgressService` from source records. Derived progress values are NOT synchronized over the wire. `currentValue` is synchronized as source data for custom goals.
+1. **Database Migration**: `d2e345678901_add_screen_time_sync.py` creates `screen_time_daily_snapshots` PostgreSQL table and index.
+2. **Backend Models & DTOs**: `ScreenTimeDailySnapshot` SQLAlchemy model and `ScreenTimeDailySnapshotDto` Pydantic schema implemented.
+3. **Backend Sync Routing**: Registered `"screen_time_daily_snapshot": (ScreenTimeDailySnapshot, ScreenTimeDailySnapshotDto)` in `ENTITY_MODELS` routing.
+4. **Security & Ownership**: Derive owner from JWT. User A cannot push, pull, modify, or delete User B's screen time snapshots. Payload `user_id` mismatch raises 403 Forbidden.
+5. **Stable Identity & Data Minimization**:
+   - Synchronizes ONLY daily aggregate snapshots (`date`, `totalDurationSeconds`, `appCount`).
+   - Transient per-app package telemetry (`AppUsage`) is NOT synchronized to preserve privacy.
+   - Stable ID generated for `(userId, local logical date)` via `Uuid.v5` to prevent duplicate daily snapshot creation upon repeated UsageStats refreshes.
+6. **Flutter Synchronization**:
+   - `ScreenTimeRepositoryImpl.syncTodaySnapshot`: Local upsert + `SyncQueueTable` insertion executed atomically inside a database transaction (`_db.transaction`).
+   - `SyncEngine`: Extended with `orderMap['screen_time_daily_snapshot'] = 1` and remote apply calls.
+   - Remote apply methods (`applyRemoteScreenTimeSnapshotChange`, `applyRemoteScreenTimeSnapshotDelete`) update SQLite without re-enqueuing into `SyncQueueTable` (loop prevention).
 7. **Test Verification**:
-   - Flutter tests: 47 / 47 passed (including 6 Phase 17 goal sync tests in `test/features/personal_goals_sync_test.dart`).
-   - Backend tests: 16 / 16 passed (including 3 Phase 17 security/sync tests in `test_sync_phase17.py`).
+   - Flutter tests: 53 / 53 passed (including 6 Phase 18 screen time sync tests in `test/features/screen_time_sync_test.dart`).
+   - Backend tests: 19 / 19 passed (including 3 Phase 18 security/sync tests in `test_sync_phase18.py`).
    - Flutter static analysis: Clean (0 errors).
-   - Release APK build: `build/app/outputs/flutter-apk/app-release.apk` built successfully.
-   - Backend tests: 13 / 13 passed (including 6 Phase 16 security/sync tests in `test_sync_phase16.py`).
-   - Flutter static analysis: 0 errors.
    - Release APK build: `build/app/outputs/flutter-apk/app-release.apk` built successfully.
 
 ---

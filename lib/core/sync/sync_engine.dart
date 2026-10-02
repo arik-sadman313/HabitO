@@ -14,6 +14,7 @@ import '../../features/lifestyle/data/lifestyle_repositories.dart';
 import '../../features/journal/data/journal_repository.dart';
 import '../../features/wellbeing/data/mood_repository.dart';
 import '../../features/goals/data/personal_goal_repository.dart';
+import '../../features/screen_time/data/screen_time_repository.dart';
 import '../database/enums.dart';
 import 'dtos.dart';
 
@@ -33,6 +34,7 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
     JournalRepositoryImpl(ref.read(databaseProvider)),
     MoodRepositoryImpl(ref.read(databaseProvider)),
     PersonalGoalRepositoryImpl(ref.read(databaseProvider)),
+    ScreenTimeRepositoryImpl(ref.read(databaseProvider)),
   );
 });
 
@@ -49,6 +51,7 @@ class SyncEngine {
   final JournalRepository _journalRepo;
   final MoodRepository _moodRepo;
   final PersonalGoalRepository _goalRepo;
+  final ScreenTimeRepository _screenTimeRepo;
 
   static const String _cursorKey = 'sync_cursor';
   static const String _deviceIdKey = 'device_id';
@@ -66,6 +69,7 @@ class SyncEngine {
     this._journalRepo,
     this._moodRepo,
     this._goalRepo,
+    this._screenTimeRepo,
   );
 
   Future<String> _getDeviceId() async {
@@ -143,6 +147,7 @@ class SyncEngine {
         'mood_log': 1,
         'journal_entry': 1,
         'personal_goal': 1,
+        'screen_time_daily_snapshot': 1,
         'tracker_log': 2,
         'habit_log': 2,
         'study_session': 2,
@@ -263,6 +268,14 @@ class SyncEngine {
                 } else {
                   final dto = PersonalGoalDto.fromJson(safePayload);
                   await _goalRepo.applyRemotePersonalGoalChange(dto.toDomain(SyncStatus.synced));
+                }
+                break;
+              case 'screen_time_daily_snapshot':
+                if (operation == 'delete') {
+                  await _screenTimeRepo.applyRemoteScreenTimeSnapshotDelete(change['entity_id'], DateTime.parse(safePayload['updated_at']));
+                } else {
+                  final dto = ScreenTimeDailySnapshotDto.fromJson(safePayload);
+                  await _screenTimeRepo.applyRemoteScreenTimeSnapshotChange(dto);
                 }
                 break;
             }

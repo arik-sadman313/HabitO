@@ -217,3 +217,16 @@ class PersonalGoal(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     is_deleted = Column(Boolean, default=False)
 
+class ScreenTimeDailySnapshot(Base):
+    __tablename__ = "screen_time_daily_snapshots"
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    user_id = Column(UUID(as_uuid=True), index=True, nullable=False)
+    date = Column(DateTime, nullable=False)
+    total_duration_seconds = Column(Integer, default=0, nullable=False)
+    app_count = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+
+

@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:habito/core/database/app_database.dart' as db;
 import 'package:habito/core/database/enums.dart';
 import 'package:habito/core/models/domain_models.dart';
+import 'package:habito/core/sync/dtos.dart';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 abstract class ScreenTimeRepository {
   Future<ScreenTimeAccessState> checkAccessState();
@@ -11,11 +13,14 @@ abstract class ScreenTimeRepository {
   Future<ScreenTimeSummary?> getTodaySummary();
   Future<List<ScreenTimeDay>> getWeeklyHistory(String userId);
   Future<void> syncTodaySnapshot(String userId, ScreenTimeSummary summary);
+  Future<void> applyRemoteScreenTimeSnapshotChange(ScreenTimeDailySnapshotDto dto);
+  Future<void> applyRemoteScreenTimeSnapshotDelete(String id, DateTime updatedAt);
 }
 
 class ScreenTimeRepositoryImpl implements ScreenTimeRepository {
   static const _channel = MethodChannel('com.habito.habito/screen_time');
   final db.AppDatabase _db;
+  final _uuid = const Uuid();
 
   ScreenTimeRepositoryImpl(this._db);
 
@@ -90,33 +95,52 @@ class ScreenTimeRepositoryImpl implements ScreenTimeRepository {
     // Convert to seconds
     final seconds = summary.totalDuration.inSeconds;
     
-    // We use a composite id or just find existing
     final existing = await (_db.select(_db.screenTimeDailySnapshotsTable)
           ..where((t) => t.userId.equals(userId) & t.date.equals(startOfDay)))
         .getSingleOrNull();
-        
-    if (existing != null) {
-      await _db.update(_db.screenTimeDailySnapshotsTable).replace(
-        existing.copyWith(
-          totalDurationSeconds: seconds,
-          appCount: summary.appCount,
-          updatedAt: now,
-        )
-      );
-    } else {
-      await _db.into(_db.screenTimeDailySnapshotsTable).insert(
+
+    final String snapshotId = existing?.id ?? _uuid.v5(Namespace.url.value, 'screentime:$userId:${startOfDay.toIso8601String()}');
+    final createdAt = existing?.createdAt ?? now;
+
+    await _db.transaction(() async {
+      await _db.into(_db.screenTimeDailySnapshotsTable).insertOnConflictUpdate(
         db.ScreenTimeDailySnapshotsTableCompanion(
-          id: Value(DateTime.now().millisecondsSinceEpoch.toString()), // Simple UUID alternative
+          id: Value(snapshotId),
           userId: Value(userId),
           date: Value(startOfDay),
           totalDurationSeconds: Value(seconds),
           appCount: Value(summary.appCount),
-          createdAt: Value(now),
+          createdAt: Value(createdAt),
           updatedAt: Value(now),
           syncStatus: const Value(SyncStatus.pendingUpdate),
-        )
+          isDeleted: const Value(false),
+        ),
       );
-    }
+
+      final dto = ScreenTimeDailySnapshotDto(
+        id: snapshotId,
+        userId: userId,
+        date: startOfDay,
+        totalDurationSeconds: seconds,
+        appCount: summary.appCount,
+        createdAt: createdAt,
+        updatedAt: now,
+        isDeleted: false,
+      );
+
+      await _db.into(_db.syncQueueTable).insert(
+        db.SyncQueueTableCompanion.insert(
+          id: _uuid.v4(),
+          entityType: 'screen_time_daily_snapshot',
+          entityId: snapshotId,
+          scopeType: 'user',
+          scopeId: userId,
+          operation: 'upsert',
+          payload: Value(jsonEncode(dto.toJson())),
+          createdAt: Value(now),
+        ),
+      );
+    });
   }
 
   @override
@@ -126,7 +150,7 @@ class ScreenTimeRepositoryImpl implements ScreenTimeRepository {
     final aWeekAgo = startOfDay.subtract(const Duration(days: 7));
     
     final records = await (_db.select(_db.screenTimeDailySnapshotsTable)
-          ..where((t) => t.userId.equals(userId) & t.date.isBiggerOrEqualValue(aWeekAgo))
+          ..where((t) => t.userId.equals(userId) & t.isDeleted.equals(false) & t.date.isBiggerOrEqualValue(aWeekAgo))
           ..orderBy([(t) => OrderingTerm(expression: t.date)]))
         .get();
         
@@ -134,5 +158,33 @@ class ScreenTimeRepositoryImpl implements ScreenTimeRepository {
       date: r.date,
       totalDuration: Duration(seconds: r.totalDurationSeconds),
     )).toList();
+  }
+
+  @override
+  Future<void> applyRemoteScreenTimeSnapshotChange(ScreenTimeDailySnapshotDto dto) async {
+    await _db.into(_db.screenTimeDailySnapshotsTable).insertOnConflictUpdate(
+      db.ScreenTimeDailySnapshotsTableCompanion(
+        id: Value(dto.id),
+        userId: Value(dto.userId),
+        date: Value(dto.date),
+        totalDurationSeconds: Value(dto.totalDurationSeconds),
+        appCount: Value(dto.appCount),
+        createdAt: Value(dto.createdAt),
+        updatedAt: Value(dto.updatedAt),
+        syncStatus: const Value(SyncStatus.synced),
+        isDeleted: Value(dto.isDeleted),
+      ),
+    );
+  }
+
+  @override
+  Future<void> applyRemoteScreenTimeSnapshotDelete(String id, DateTime updatedAt) async {
+    await (_db.update(_db.screenTimeDailySnapshotsTable)..where((tbl) => tbl.id.equals(id))).write(
+      db.ScreenTimeDailySnapshotsTableCompanion(
+        isDeleted: const Value(true),
+        updatedAt: Value(updatedAt),
+        syncStatus: const Value(SyncStatus.synced),
+      ),
+    );
   }
 }
