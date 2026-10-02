@@ -217,4 +217,56 @@ class ScreenTimeDailySnapshotDto(BaseModel):
     updated_at: datetime
     is_deleted: bool = False
 
+class SharedGoalDto(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    couple_id: UUID
+    title: str
+    description: Optional[str] = None
+    target: float
+    current_progress: float = 0.0
+    unit: Optional[str] = None
+    deadline: Optional[datetime] = None
+    is_completed: bool = False
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool = False
+
+class SharedHabitDto(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    couple_id: UUID
+    title: str
+    frequency: int  # HabitFrequency enum index
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool = False
+
+class SharedActivityDto(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    couple_id: UUID
+    title: str
+    notes: Optional[str] = None
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    is_completed: bool = False
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool = False
+
+class MemoryDto(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    couple_id: UUID
+    title: str
+    description: Optional[str] = None
+    date: datetime
+    media_url: Optional[str] = None
+    tags: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool = False
+
+
 

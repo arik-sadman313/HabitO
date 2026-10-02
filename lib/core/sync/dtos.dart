@@ -1359,4 +1359,347 @@ class ScreenTimeDailySnapshotDto {
   }
 }
 
+class SharedGoalDto {
+  final String id;
+  final String coupleId;
+  final String title;
+  final String? description;
+  final double target;
+  final double currentProgress;
+  final String? unit;
+  final DateTime? deadline;
+  final bool isCompleted;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDeleted;
+
+  SharedGoalDto({
+    required this.id,
+    required this.coupleId,
+    required this.title,
+    this.description,
+    required this.target,
+    required this.currentProgress,
+    this.unit,
+    this.deadline,
+    required this.isCompleted,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+  });
+
+  factory SharedGoalDto.fromDomain(SharedGoal goal) {
+    return SharedGoalDto(
+      id: goal.id,
+      coupleId: goal.coupleId,
+      title: goal.title,
+      description: goal.description,
+      target: goal.target,
+      currentProgress: goal.currentProgress,
+      unit: goal.unit,
+      deadline: goal.deadline,
+      isCompleted: goal.isCompleted,
+      createdAt: goal.createdAt,
+      updatedAt: goal.updatedAt,
+      isDeleted: goal.isDeleted,
+    );
+  }
+
+  SharedGoal toDomain() {
+    return SharedGoal(
+      id: id,
+      coupleId: coupleId,
+      title: title,
+      description: description,
+      target: target,
+      currentProgress: currentProgress,
+      unit: unit,
+      deadline: deadline,
+      isCompleted: isCompleted,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      syncStatus: SyncStatus.synced,
+      isDeleted: isDeleted,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'couple_id': coupleId,
+      'title': title,
+      'description': description,
+      'target': target,
+      'current_progress': currentProgress,
+      'unit': unit,
+      'deadline': deadline?.toIso8601String(),
+      'is_completed': isCompleted,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'is_deleted': isDeleted,
+    };
+  }
+
+  factory SharedGoalDto.fromJson(Map<String, dynamic> json) {
+    return SharedGoalDto(
+      id: json['id'],
+      coupleId: json['couple_id'],
+      title: json['title'],
+      description: json['description'],
+      target: (json['target'] as num).toDouble(),
+      currentProgress: (json['current_progress'] as num).toDouble(),
+      unit: json['unit'],
+      deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
+      isCompleted: json['is_completed'] ?? false,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      isDeleted: json['is_deleted'] ?? false,
+    );
+  }
+}
+
+class SharedHabitDto {
+  final String id;
+  final String coupleId;
+  final String title;
+  final int frequency;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDeleted;
+
+  SharedHabitDto({
+    required this.id,
+    required this.coupleId,
+    required this.title,
+    required this.frequency,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+  });
+
+  factory SharedHabitDto.fromDomain(SharedHabit habit) {
+    return SharedHabitDto(
+      id: habit.id,
+      coupleId: habit.coupleId,
+      title: habit.title,
+      frequency: habit.frequency.index,
+      createdAt: habit.createdAt,
+      updatedAt: habit.updatedAt,
+      isDeleted: habit.isDeleted,
+    );
+  }
+
+  SharedHabit toDomain() {
+    return SharedHabit(
+      id: id,
+      coupleId: coupleId,
+      title: title,
+      frequency: HabitFrequency.values[frequency],
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      syncStatus: SyncStatus.synced,
+      isDeleted: isDeleted,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'couple_id': coupleId,
+      'title': title,
+      'frequency': frequency,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'is_deleted': isDeleted,
+    };
+  }
+
+  factory SharedHabitDto.fromJson(Map<String, dynamic> json) {
+    return SharedHabitDto(
+      id: json['id'],
+      coupleId: json['couple_id'],
+      title: json['title'],
+      frequency: (json['frequency'] as num).toInt(),
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      isDeleted: json['is_deleted'] ?? false,
+    );
+  }
+}
+
+class SharedActivityDto {
+  final String id;
+  final String coupleId;
+  final String title;
+  final String? notes;
+  final DateTime startTime;
+  final DateTime? endTime;
+  final bool isCompleted;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDeleted;
+
+  SharedActivityDto({
+    required this.id,
+    required this.coupleId,
+    required this.title,
+    this.notes,
+    required this.startTime,
+    this.endTime,
+    required this.isCompleted,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+  });
+
+  factory SharedActivityDto.fromDomain(SharedActivity activity) {
+    return SharedActivityDto(
+      id: activity.id,
+      coupleId: activity.coupleId,
+      title: activity.title,
+      notes: activity.notes,
+      startTime: activity.startTime,
+      endTime: activity.endTime,
+      isCompleted: activity.isCompleted,
+      createdAt: activity.createdAt,
+      updatedAt: activity.updatedAt,
+      isDeleted: activity.isDeleted,
+    );
+  }
+
+  SharedActivity toDomain() {
+    return SharedActivity(
+      id: id,
+      coupleId: coupleId,
+      title: title,
+      notes: notes,
+      startTime: startTime,
+      endTime: endTime,
+      isCompleted: isCompleted,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      syncStatus: SyncStatus.synced,
+      isDeleted: isDeleted,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'couple_id': coupleId,
+      'title': title,
+      'notes': notes,
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime?.toIso8601String(),
+      'is_completed': isCompleted,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'is_deleted': isDeleted,
+    };
+  }
+
+  factory SharedActivityDto.fromJson(Map<String, dynamic> json) {
+    return SharedActivityDto(
+      id: json['id'],
+      coupleId: json['couple_id'],
+      title: json['title'],
+      notes: json['notes'],
+      startTime: DateTime.parse(json['start_time']),
+      endTime: json['end_time'] != null ? DateTime.parse(json['end_time']) : null,
+      isCompleted: json['is_completed'] ?? false,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      isDeleted: json['is_deleted'] ?? false,
+    );
+  }
+}
+
+class MemoryDto {
+  final String id;
+  final String coupleId;
+  final String title;
+  final String? description;
+  final DateTime date;
+  final String? mediaUrl;
+  final String? tags;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isDeleted;
+
+  MemoryDto({
+    required this.id,
+    required this.coupleId,
+    required this.title,
+    this.description,
+    required this.date,
+    this.mediaUrl,
+    this.tags,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.isDeleted,
+  });
+
+  factory MemoryDto.fromDomain(Memory memory) {
+    return MemoryDto(
+      id: memory.id,
+      coupleId: memory.coupleId,
+      title: memory.title,
+      description: memory.description,
+      date: memory.date,
+      mediaUrl: memory.mediaUrl,
+      tags: memory.tags,
+      createdAt: memory.createdAt,
+      updatedAt: memory.updatedAt,
+      isDeleted: memory.isDeleted,
+    );
+  }
+
+  Memory toDomain() {
+    return Memory(
+      id: id,
+      coupleId: coupleId,
+      title: title,
+      description: description,
+      date: date,
+      mediaUrl: mediaUrl,
+      tags: tags,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      syncStatus: SyncStatus.synced,
+      isDeleted: isDeleted,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'couple_id': coupleId,
+      'title': title,
+      'description': description,
+      'date': date.toIso8601String(),
+      'media_url': mediaUrl,
+      'tags': tags,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'is_deleted': isDeleted,
+    };
+  }
+
+  factory MemoryDto.fromJson(Map<String, dynamic> json) {
+    return MemoryDto(
+      id: json['id'],
+      coupleId: json['couple_id'],
+      title: json['title'],
+      description: json['description'],
+      date: DateTime.parse(json['date']),
+      mediaUrl: json['media_url'],
+      tags: json['tags'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      isDeleted: json['is_deleted'] ?? false,
+    );
+  }
+}
+
+
 

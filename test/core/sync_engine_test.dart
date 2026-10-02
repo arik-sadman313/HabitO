@@ -12,6 +12,7 @@ import 'package:habito/features/journal/data/journal_repository.dart';
 import 'package:habito/features/wellbeing/data/mood_repository.dart';
 import 'package:habito/features/goals/data/personal_goal_repository.dart';
 import 'package:habito/features/screen_time/data/screen_time_repository.dart';
+import 'package:habito/features/us/data/us_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
@@ -38,6 +39,7 @@ void main() {
     final moodRepo = MoodRepositoryImpl(database);
     final goalRepo = PersonalGoalRepositoryImpl(database);
     final screenTimeRepo = ScreenTimeRepositoryImpl(database);
+    final usRepo = UsRepositoryImpl(database);
     syncEngine = SyncEngine(
       database,
       dioClient,
@@ -52,8 +54,10 @@ void main() {
       moodRepo,
       goalRepo,
       screenTimeRepo,
+      usRepo,
     );
   });
+
   
   tearDown(() async {
     await database.close();

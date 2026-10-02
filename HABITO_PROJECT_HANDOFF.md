@@ -2,9 +2,9 @@
 
 **Document purpose:** Permanent handoff document for continuing HabitO across ChatGPT/Gemini/Antigravity accounts.
 
-**Current project state:** Phases 1–18 completed and verified. Phase 18 (Screen Time Synchronization) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, JWT security, and automated unit test suites.
+**Current project state:** Phases 1–19 completed and verified. Phase 19 (Couple & Shared Data Synchronization) has been fully verified across Flutter, FastAPI backend, SQLAlchemy/Alembic migrations, couple membership security controls, dual-scope SyncEngine, and automated unit test suites.
 
-**Critical rule:** Do not start Phase 19 automatically. Stop and wait for instructions after completing any phase.
+**Critical rule:** Do not start Phase 20 automatically. Stop and wait for instructions after completing any phase.
 
 ---
 
@@ -906,10 +906,10 @@ Therefore do not describe Phase 15 as synchronizing literally every application 
 | Personal Goals | Yes | Yes (`personal_goals`) | Synced (Phase 17) | No |
 | Screen Time | Yes | Yes (`screen_time_daily_snapshots`) | Synced (Phase 18) | No |
 | Reminders | Yes | No/Not yet | No | No |
-| Shared Goals | Yes | No/Not yet | No | Future |
-| Shared Habits | Yes | No/Not yet | No | Future |
-| Shared Activities | Yes | No/Not yet | No | Future |
-| Memories | Yes | No/Not yet | No | Future |
+| Shared Goals | Yes | Yes (`shared_goals`) | Synced (Phase 19) | Couple Scope |
+| Shared Habits | Yes | Yes (`shared_habits`) | Synced (Phase 19) | Couple Scope |
+| Shared Activities | Yes | Yes (`shared_activities`) | Synced (Phase 19) | Couple Scope |
+| Memories | Yes | Yes (`memories`) | Synced (Phase 19) | Couple Scope |
 
 ---
 
@@ -1064,30 +1064,30 @@ Later, an explicit couple-scoped sync system can be designed for:
 
 ---
 
-# 14. Current Phase — Phase 18
+# 14. Current Phase — Phase 19
 
 ## Status
 
-**PHASE 18 IS COMPLETED AND VERIFIED.**
+**PHASE 19 IS COMPLETED AND VERIFIED.**
 
-Phase 18 (Screen Time Synchronization) has been fully implemented and verified across Flutter repositories, SyncEngine, DTOs, FastAPI backend sync routes, SQLAlchemy models, Alembic migrations, security/ownership controls, stable daily snapshot identity, and automated unit test suites.
+Phase 19 (Couple & Shared Data Synchronization) has been fully implemented and verified across Flutter repositories, SyncEngine, DTOs, FastAPI backend sync routes, SQLAlchemy models, Alembic migrations, couple membership security controls, dual-scope synchronization, and automated unit test suites.
 
 ### Verified State Summary:
-1. **Database Migration**: `d2e345678901_add_screen_time_sync.py` creates `screen_time_daily_snapshots` PostgreSQL table and index.
-2. **Backend Models & DTOs**: `ScreenTimeDailySnapshot` SQLAlchemy model and `ScreenTimeDailySnapshotDto` Pydantic schema implemented.
-3. **Backend Sync Routing**: Registered `"screen_time_daily_snapshot": (ScreenTimeDailySnapshot, ScreenTimeDailySnapshotDto)` in `ENTITY_MODELS` routing.
-4. **Security & Ownership**: Derive owner from JWT. User A cannot push, pull, modify, or delete User B's screen time snapshots. Payload `user_id` mismatch raises 403 Forbidden.
-5. **Stable Identity & Data Minimization**:
-   - Synchronizes ONLY daily aggregate snapshots (`date`, `totalDurationSeconds`, `appCount`).
-   - Transient per-app package telemetry (`AppUsage`) is NOT synchronized to preserve privacy.
-   - Stable ID generated for `(userId, local logical date)` via `Uuid.v5` to prevent duplicate daily snapshot creation upon repeated UsageStats refreshes.
-6. **Flutter Synchronization**:
-   - `ScreenTimeRepositoryImpl.syncTodaySnapshot`: Local upsert + `SyncQueueTable` insertion executed atomically inside a database transaction (`_db.transaction`).
-   - `SyncEngine`: Extended with `orderMap['screen_time_daily_snapshot'] = 1` and remote apply calls.
-   - Remote apply methods (`applyRemoteScreenTimeSnapshotChange`, `applyRemoteScreenTimeSnapshotDelete`) update SQLite without re-enqueuing into `SyncQueueTable` (loop prevention).
-7. **Test Verification**:
-   - Flutter tests: 53 / 53 passed (including 6 Phase 18 screen time sync tests in `test/features/screen_time_sync_test.dart`).
-   - Backend tests: 19 / 19 passed (including 3 Phase 18 security/sync tests in `test_sync_phase18.py`).
+1. **Database Migration**: `e3f456789012_add_couple_shared_data_sync.py` creates `shared_goals`, `shared_habits`, `shared_activities`, and `memories` PostgreSQL tables with `couple_id` indexes and updated_at triggers.
+2. **Backend Models & DTOs**: `SharedGoal`, `SharedHabit`, `SharedActivity`, `Memory` SQLAlchemy models and corresponding DTO schemas implemented.
+3. **Backend Sync Routing**: Registered `shared_goal`, `shared_habit`, `shared_activity`, and `memory` in `ENTITY_MODELS` routing.
+4. **Security & Couple Membership**:
+   - `verify_couple_membership(user_id, couple_id, db)` validates that the authenticated JWT user belongs to the active couple.
+   - Non-members pushing or pulling couple-scoped entities receive HTTP 403 Forbidden.
+   - User A and User B in a verified couple can both push, pull, and synchronize shared entities.
+5. **Flutter Synchronization**:
+   - Extended `UsRepositoryImpl` with `saveSharedGoal`, `deleteSharedGoal`, `saveSharedHabit`, `deleteSharedHabit`, `saveSharedActivity`, `deleteSharedActivity`, `saveMemory`, `deleteMemory`.
+   - Operations atomically write to local Drift tables and insert entries into `SyncQueueTable` with `scopeType: 'couple'` and `scopeId: coupleId`.
+   - `SyncEngine` extended with `UsRepository` and couple pull/push support.
+   - Remote apply methods (`applyRemoteSharedGoalChange`, `applyRemoteSharedHabitChange`, `applyRemoteSharedActivityChange`, `applyRemoteMemoryChange`, etc.) update SQLite directly without re-enqueuing into `SyncQueueTable` (loop prevention).
+6. **Test Verification**:
+   - Flutter tests: 58 / 58 passed (including 5 Phase 19 couple sync tests in `test/features/us_sync_test.dart`).
+   - Backend tests: 22 / 22 passed (including 3 Phase 19 security & sync tests in `backend/tests/test_sync_phase19.py`).
    - Flutter static analysis: Clean (0 errors).
    - Release APK build: `build/app/outputs/flutter-apk/app-release.apk` built successfully.
 

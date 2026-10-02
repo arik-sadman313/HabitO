@@ -229,4 +229,60 @@ class ScreenTimeDailySnapshot(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     is_deleted = Column(Boolean, default=False)
 
+class SharedGoal(Base):
+    __tablename__ = "shared_goals"
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    couple_id = Column(UUID(as_uuid=True), ForeignKey('couples.id', ondelete='CASCADE'), index=True, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    target = Column(Float, nullable=False)
+    current_progress = Column(Float, default=0.0, nullable=False)
+    unit = Column(String, nullable=True)
+    deadline = Column(DateTime, nullable=True)
+    is_completed = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+
+class SharedHabit(Base):
+    __tablename__ = "shared_habits"
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    couple_id = Column(UUID(as_uuid=True), ForeignKey('couples.id', ondelete='CASCADE'), index=True, nullable=False)
+    title = Column(String, nullable=False)
+    frequency = Column(Integer, nullable=False)  # HabitFrequency enum index
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+
+class SharedActivity(Base):
+    __tablename__ = "shared_activities"
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    couple_id = Column(UUID(as_uuid=True), ForeignKey('couples.id', ondelete='CASCADE'), index=True, nullable=False)
+    title = Column(String, nullable=False)
+    notes = Column(Text, nullable=True)
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=True)
+    is_completed = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+
+class Memory(Base):
+    __tablename__ = "memories"
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    couple_id = Column(UUID(as_uuid=True), ForeignKey('couples.id', ondelete='CASCADE'), index=True, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    date = Column(DateTime, nullable=False)
+    media_url = Column(String, nullable=True)
+    tags = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    is_deleted = Column(Boolean, default=False)
+
+
 

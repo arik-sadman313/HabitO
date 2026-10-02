@@ -15,6 +15,7 @@ import '../../features/journal/data/journal_repository.dart';
 import '../../features/wellbeing/data/mood_repository.dart';
 import '../../features/goals/data/personal_goal_repository.dart';
 import '../../features/screen_time/data/screen_time_repository.dart';
+import '../../features/us/data/us_repository.dart';
 import '../database/enums.dart';
 import 'dtos.dart';
 
@@ -35,6 +36,7 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
     MoodRepositoryImpl(ref.read(databaseProvider)),
     PersonalGoalRepositoryImpl(ref.read(databaseProvider)),
     ScreenTimeRepositoryImpl(ref.read(databaseProvider)),
+    UsRepositoryImpl(ref.read(databaseProvider)),
   );
 });
 
@@ -52,6 +54,7 @@ class SyncEngine {
   final MoodRepository _moodRepo;
   final PersonalGoalRepository _goalRepo;
   final ScreenTimeRepository _screenTimeRepo;
+  final UsRepository _usRepo;
 
   static const String _cursorKey = 'sync_cursor';
   static const String _deviceIdKey = 'device_id';
@@ -70,6 +73,7 @@ class SyncEngine {
     this._moodRepo,
     this._goalRepo,
     this._screenTimeRepo,
+    this._usRepo,
   );
 
   Future<String> _getDeviceId() async {
@@ -148,6 +152,10 @@ class SyncEngine {
         'journal_entry': 1,
         'personal_goal': 1,
         'screen_time_daily_snapshot': 1,
+        'shared_goal': 1,
+        'shared_habit': 1,
+        'shared_activity': 1,
+        'memory': 1,
         'tracker_log': 2,
         'habit_log': 2,
         'study_session': 2,
@@ -278,6 +286,38 @@ class SyncEngine {
                   await _screenTimeRepo.applyRemoteScreenTimeSnapshotChange(dto);
                 }
                 break;
+              case 'shared_goal':
+                if (operation == 'delete') {
+                  await _usRepo.applyRemoteSharedGoalDelete(change['entity_id'], DateTime.parse(safePayload['updated_at']));
+                } else {
+                  final dto = SharedGoalDto.fromJson(safePayload);
+                  await _usRepo.applyRemoteSharedGoalChange(dto.toDomain());
+                }
+                break;
+              case 'shared_habit':
+                if (operation == 'delete') {
+                  await _usRepo.applyRemoteSharedHabitDelete(change['entity_id'], DateTime.parse(safePayload['updated_at']));
+                } else {
+                  final dto = SharedHabitDto.fromJson(safePayload);
+                  await _usRepo.applyRemoteSharedHabitChange(dto.toDomain());
+                }
+                break;
+              case 'shared_activity':
+                if (operation == 'delete') {
+                  await _usRepo.applyRemoteSharedActivityDelete(change['entity_id'], DateTime.parse(safePayload['updated_at']));
+                } else {
+                  final dto = SharedActivityDto.fromJson(safePayload);
+                  await _usRepo.applyRemoteSharedActivityChange(dto.toDomain());
+                }
+                break;
+              case 'memory':
+                if (operation == 'delete') {
+                  await _usRepo.applyRemoteMemoryDelete(change['entity_id'], DateTime.parse(safePayload['updated_at']));
+                } else {
+                  final dto = MemoryDto.fromJson(safePayload);
+                  await _usRepo.applyRemoteMemoryChange(dto.toDomain());
+                }
+                break;
             }
           } catch (e) {
             // Rethrowing will rollback the transaction
@@ -298,3 +338,4 @@ class SyncEngine {
     await pull();
   }
 }
+
